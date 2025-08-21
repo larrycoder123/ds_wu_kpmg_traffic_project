@@ -1,0 +1,83 @@
+Verkehrszählstellen Zählwerte Wien  - raw/dauerzaehlstellen.csv
+***************************************************************
+
+https://www.data.gv.at/katalog/dataset/4707e82a-154f-48b2-864c-89fffc6334e1
+
+JAHR = Zähljahr 
+MONAT = Zählmonat 
+ZNR = Zählstellenummer - verknüpfbar mit der ZST_ID des Datensatzes "Verkehrszählstellen - Standorte" 
+ZNAME = Zählstellenname STRTYP = Straßentyp (B = Hauptstraße B, G = Gemeindestraße) 
+STRNR = Straßennummer (Bezeichnung des Hauptstraßen B-Netzes) 
+RINAME = Richtungsname (Fahrziel) 
+FZTYP = Fahrzeugtyp / -gruppe (Kfz = Alle Kraftfahrzeuge, LkwÄ = Lkw-ähnliche Kraftfahrzeuge) 
+DTVMS = Durchschnittlicher täglicher Verkehr - Anzahl der Fahrzeuge laut FZTYP pro 24h DTVMS = Montag bis Sonntag (alle Tage) 
+DTVMF = Montag bis Freitag (keine Feiertage) 
+DTVMO = Montag (keine Feiertage) 
+DTVDD = Dienstag bis Donnerstag (keine Feiertage) 
+DTVFR = Freitag (keine Feiertage) 
+DTVSA = Samstag (keine Feiertage) 
+DTVSF = Sonn- und Feiertage 
+TVMAX = Maximaler Tagesverkehr (alle Tage) 
+TVMAXT = Wochentag und Datum des TVMAX, * =Tag enthält geschätzte Werte -29 = Negative Werte kennzeichnen nicht verfügbare Werte (z.B. Ausfälle oder Gegenrichtung in Einbahnstraßen)
+
+
+
+Verkehrszählstellen Standorte Wien  - raw/dauerzaehlogd.csv
+***********************************************************
+
+https://www.data.gv.at/katalog/dataset/3d66f423-def8-467e-af82-2fa98146b967
+
+ZST_ID = Zählstellennummer (verknüpfbar mit ZNR des Datensatz "Verkehrszählstellen - Zählwerte)
+ZST_NAME = Zählstellenname
+STR_NR = Bezeichnung Hauptstraßen B-Netz
+BETRIEBNAHME = Inbetriebnahmedatum
+RICHTUNG_1 = Fahrtrichtungsangabe der Zählstelle
+RICHTUNG_2 = Fahrtrichtungsangabe der Zählstelle
+LAGE = genaue Lagebeschreibung der Zählstelle
+GERAETEART = Detektionsart (Schleifengerät, Seitenradar)
+GERAETEART_TXT = Beschreibung der Detektionsart
+
+
+
+Bezirksgrenzen Wien - raw/bezirksgrenzeogd.json
+***********************************************
+
+https://www.data.gv.at/katalog/dataset/2ee6b8bf-6292-413c-bb8b-bd22dbb2ad4b
+
+NAMEK: Bezirksname (Wiener Gemeindebezirksname)
+BEZNR: Bezirksnummer
+BEZ_RZ: Bezirksnummer (in römischen Zahlen)
+NAMEG: Bezirksname
+LABEL: Bezirksnummer (in römischen Zahlen)
+BEZ: Bezirksnummer
+DISTRICT_CODE: Bezirkscode
+STATAUSTRIA_BEZ_CODE: Bezirkscode gem. Spezifikation der Statistik Austria
+STATAUSTRIA_GEM: Gemeindecode gem. Spezifikation der Statistik Austria
+FLAECHE: Fläche in Quadratmetern
+UMFANG: Umfang in Metern
+AKT_TIMESTAMP: Aktualisierungsdatum
+
+
+
+Bevölkerung seit 1869 - Bezirke Wien - raw/vie-bez-pop-sex-stk-1869f.csv
+************************************************************************
+
+https://www.data.gv.at/katalog/dataset/091a085f-2652-429f-8dde-c69199440ddf#resources
+
+NUTS | NUTS2-Region (Bundesland)
+DISTRICT_CODE | Gemeindebezirkskennzahl (Schema: 9BBZZ, BB=Nummer Bezirk, ZZ=00)
+SUB_DISTRICT_CODE | Zählbezirkskennzahl gemäß Stadt Wien, (bei fehlendem Zählbezirk=DISTRICT_CODE)
+REF_DATE | Referenzdatum
+REF_YEAR | Referenzjahr 
+POP_TOTAL | Gesamtbevölkerung 
+POP_MAL | Männer 
+POP_FEM | Frauen
+
+
+
+Demographie
+***********
+
+https://www.wien.gv.at/statistik/bezirke/index.html#daten
+https://www.inspire.gv.at/
+https://www.openstreetmap.de/nutzen/daten/ -> https://download.geofabrik.de/europe/austria.html

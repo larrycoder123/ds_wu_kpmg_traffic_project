@@ -1,0 +1,217 @@
+---
+title: "analysis_regression_public_transport"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+zaehlstellen_verkehr <- read_csv("data/dauerzaehlstellen_data.csv")
+public_transport <- read_csv("data/dauerzaehlstellen_location_public_transport_1km.csv")
+zaehlstellen_location <- read_csv("data/dauerzaehlstellen_location.csv")
+district_population <- read_csv("data_arima/data_arima_final/population_by_bezirk.csv")
+vehicle_density <- read_csv("data_arima/data_arima_final/vehicle_density.csv")
+
+```
+
+```{r}
+districts <- zaehlstellen_location %>% 
+  select(ZNR, BEZIRK_PLZ) %>% 
+  mutate(ZNR = as.character(ZNR))
+```
+
+
+```{r}
+
+znr_counts <- table(public_transport$ZNR)
+znr_counts_df <- as.data.frame(znr_counts)
+colnames(znr_counts_df) <- c("ZNR", "count")
+znr_counts_df$ZNR <- as.character(znr_counts_df$ZNR)
+
+```
+
+```{r}
+gesamt <- zaehlstellen_verkehr %>% filter(RINAME == "Gesamt")
+
+gesamt_kfz <- gesamt %>% filter(FZTYP == "Kfz")
+gesamt_lkw <- gesamt %>% filter(FZTYP == "LkwÄ")
+
+gesamt_kfz$ZNR <- as.integer(gesamt_kfz$ZNR)
+gesamt_lkw$ZNR <- as.integer(gesamt_lkw$ZNR)
+
+gesamt_kfz$ZNR <- as.character(gesamt_kfz$ZNR)
+gesamt_lkw$ZNR <- as.character(gesamt_lkw$ZNR)
+
+gesamt_kfz <- merge(gesamt_kfz, znr_counts_df, by = "ZNR", all.x = TRUE)
+gesamt_kfz <- merge(gesamt_kfz, districts, by = "ZNR", all.x = TRUE)
+gesamt_lkw <- merge(gesamt_lkw, znr_counts_df, by = "ZNR", all.x = TRUE)
+gesamt_lkw <- merge(gesamt_lkw, districts, by = "ZNR", all.x = TRUE)
+
+gesamt_kfz$BEZIRKSGRUPPE <- ifelse(gesamt_kfz$BEZIRK_PLZ <= 9, "1010-1090", "1100-1230")
+gesamt_lkw$BEZIRKSGRUPPE <- ifelse(gesamt_lkw$BEZIRK_PLZ <= 9, "1010-1090", "1100-1230")
+
+```
+
+```{r}
+district_population$BEZIRK <- as.numeric(as.character(district_population$BEZIRK))
+
+district_population <- district_population %>%
+  mutate(BEZIRKSGRUPPE = ifelse(BEZIRK <= 1090, "1010-1090", "1100-1230"))
+
+mean_pop <- district_population %>%
+  group_by(BEZIRKSGRUPPE) %>%
+  summarise(mean_population = mean(POP, na.rm = TRUE))
+
+
+```
+
+
+```{r}
+aggregated_kfz <- gesamt_kfz %>%
+  group_by(ZNR, BEZIRKSGRUPPE) %>%
+  summarise(
+    DATUM = first(DATUM),
+    ZNAME = first(ZNAME),
+    STRTYP = first(STRTYP),
+    STRNR = first(STRNR),
+    RINAME = first(RINAME),
+    FZTYP = first(FZTYP),
+    DTVMS = sum(DTVMS, na.rm = TRUE),
+    DTVMF = sum(DTVMF, na.rm = TRUE),
+    DTVMO = sum(DTVMO, na.rm = TRUE),
+    DTVDD = sum(DTVDD, na.rm = TRUE),
+    DTVFR = sum(DTVFR, na.rm = TRUE),
+    DTVSA = sum(DTVSA, na.rm = TRUE),
+    DTVSF = sum(DTVSF, na.rm = TRUE),
+    TVMAX = sum(TVMAX, na.rm = TRUE),
+    ISTCOVID19 = first(ISTCOVID19),
+    count = first(count),
+    .groups = "drop"
+  )
+
+aggregated_lkw <- gesamt_lkw %>%
+  group_by(ZNR, BEZIRKSGRUPPE) %>%
+  summarise(
+    DATUM = first(DATUM),
+    ZNAME = first(ZNAME),
+    STRTYP = first(STRTYP),
+    STRNR = first(STRNR),
+    RINAME = first(RINAME),
+    FZTYP = first(FZTYP),
+    DTVMS = sum(DTVMS, na.rm = TRUE),
+    DTVMF = sum(DTVMF, na.rm = TRUE),
+    DTVMO = sum(DTVMO, na.rm = TRUE),
+    DTVDD = sum(DTVDD, na.rm = TRUE),
+    DTVFR = sum(DTVFR, na.rm = TRUE),
+    DTVSA = sum(DTVSA, na.rm = TRUE),
+    DTVSF = sum(DTVSF, na.rm = TRUE),
+    TVMAX = sum(TVMAX, na.rm = TRUE),
+    count = first(count),
+      .groups = "drop"
+  )
+```
+
+```{r}
+aggregated_kfz <- merge(aggregated_kfz, mean_pop, by = "BEZIRKSGRUPPE", all.x = TRUE)
+```
+
+
+```{r}
+kfz_bzr_1_9 <- aggregated_kfz %>%
+  filter(BEZIRKSGRUPPE == "1010-1090")
+head(kfz_bzr_1_9)
+
+kfz_bzr_10_23 <-aggregated_kfz %>%
+  filter(BEZIRKSGRUPPE == "1100-1230")
+head(kfz_bzr_10_23)
+```
+
+
+
+```{r}
+plot_data <- aggregated_kfz %>%
+  select(ZNR, count, DTVMO, DTVDD, DTVFR, DTVSA, DTVSF, TVMAX)
+
+# In Long-Format transformieren für ggplot
+plot_data_long <- pivot_longer(
+  plot_data,
+  cols = c(DTVMO, DTVDD, DTVFR, DTVSA, DTVSF, TVMAX),
+  names_to = "Wochentag",
+  values_to = "Verkehr"
+)
+
+
+ggplot(plot_data_long, aes(x = count, y = Verkehr, color = Wochentag)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, linetype = "dashed") +
+  labs(
+    title = "Verkehrswerte pro Anzahl an Haltestellen",
+    x = "Anzahl der öffentlichen verkehrs Haltestellen im 1km Umkreis",
+    y = "Täglicher Verkehr",
+    color = "Wochentag"
+  ) +
+  theme_minimal()
+```
+
+Regressionen KFZ
+
+```{r}
+# Regression Woche (MO-FR)
+regression_kfz_woche <- lm(DTVMO + DTVDD + DTVFR ~ count, data = aggregated_kfz)
+summary(regression_kfz_woche)
+# Traffic count ist abhängig von den Haltestellen
+```
+```{r}
+regression_kfz_woche_10_23 <- lm(DTVMO + DTVDD + DTVFR + mean_population  ~ count, data = kfz_bzr_10_23)
+summary(regression_kfz_woche_10_23)
+```
+```{r}
+str(mean_pop)
+```
+
+
+```{r}
+regression_kfz_woche_10_23_log <- lm(log(DTVMO + DTVDD + DTVFR) ~ log(count), data = kfz_bzr_10_23)
+summary(regression_kfz_woche_10_23_log)
+```
+
+
+```{r}
+# Regression Wochenende und Feiertage
+regression_kfz_wochenende <- lm(DTVSA + DTVSF ~ count, data = aggregated_kfz)
+summary(regression_kfz_wochenende)
+# Traffic count ist abhängig von den Haltestellen
+```
+
+```{r}
+# Regression maximaler Wert
+regression_kfz_max <- lm(TVMAX ~ count, data = aggregated_kfz)
+summary(regression_kfz_max)
+```
+Regressionen Lkw
+
+```{r}
+# Regression Lkw Woche (MO-FR)
+regression_lkw_woche <- lm(DTVMO + DTVDD + DTVFR ~ count, data = aggregated_lkw)
+summary(regression_lkw_woche)
+# Traffic count ist nicht abhängig von den Haltestellen
+```
+```{r}
+# Regression Lkw Wochenende
+regression_lkw_wochenende <- lm(DTVSA + DTVSF ~ count, data = aggregated_lkw)
+summary(regression_lkw_wochenende)
+# Traffic count ist abhängig von den Haltestellen
+```
+```{r}
+# Regression maximaler Wert
+regression_lkw_max <- lm(TVMAX ~ count, data = aggregated_lkw)
+summary(regression_lkw_max) # nicht signifikant
+```
+
+
+

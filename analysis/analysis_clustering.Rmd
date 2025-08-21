@@ -1,0 +1,334 @@
+---
+title: "analysis_clustering"
+output:
+  html_document: default
+  pdf_document: default
+date: "2025-05-15"
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(cluster)
+library(factoextra)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("leaflet")
+library(leaflet)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("ggmap")
+library(ggmap)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("sf")
+library(sf)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("osmdata")
+library(osmdata)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("rosm")
+library(rosm)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("ggspatial")
+library(ggspatial)
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+install.packages("prettymapr")
+library(prettymapr)
+
+zaehlstellen <- read_csv("data/dauerzaehlstellen_location.csv")
+verkehr <- read_csv("data/dauerzaehlstellen_data.csv")
+```
+
+```{r}
+# Nur Einträge mit RINAME == "Gesamt" => Auffahrten und Ausfahrten werden nicht berücksichtigt
+gesamt <- verkehr %>% filter(RINAME == "Gesamt")
+
+gesamt_kfz <- gesamt %>% filter(FZTYP == "Kfz")
+gesamt_lkw <- gesamt %>% filter(FZTYP == "LkwÄ")
+
+gesamt_kfz$ZNR <- as.integer(gesamt_kfz$ZNR)
+gesamt_lkw$ZNR <- as.integer(gesamt_lkw$ZNR)
+zaehlstellen$ZNR <- as.integer(zaehlstellen$ZNR)
+
+# Mergen mit Koordinaten durch die logs
+gesamt_kfz_geo <- inner_join(gesamt_kfz, zaehlstellen, by = "ZNR")
+gesamt_lkw_geo <- inner_join(gesamt_lkw, zaehlstellen, by = "ZNR")
+```
+
+```{r}
+ggplot() +
+  geom_point(data = gesamt_kfz_geo, aes(x = as.numeric(LONGITUDE), y = as.numeric(LATITUDE)), 
+             color = "red", alpha = 0.6, size = 2) +
+  labs(title = "Zählstellen Wien", x = "Längengrad", y = "Breitengrad") +
+  theme_minimal()
+
+```
+
+
+```{r}
+# Clusteranalyse (Features) gesamte Woche
+cluster_features <- c("DTVMO", "DTVDD", "DTVFR", "DTVSA", "DTVSF")
+
+# Daten bereinigen
+kfz_data <- gesamt_kfz_geo %>%
+  select(all_of(cluster_features)) %>%
+  mutate_all(as.numeric) %>%
+  drop_na()
+
+lkw_data <- gesamt_lkw_geo %>%
+  select(all_of(cluster_features)) %>%
+  mutate_all(as.numeric) %>%
+  drop_na()
+
+kfz_scaled <- scale(kfz_data)
+lkw_scaled <- scale(lkw_data)
+
+# Elbow-Methode kfz
+fviz_nbclust(kfz_scaled, kmeans, method = "wss") +
+  labs(title = "Elbow Method: Optimale Clusteranzahl (KMeans) Kfz", x = "Anzahl Cluster (k)", y = "WSS")
+
+# Elbow-Methode lkw
+fviz_nbclust(lkw_scaled, kmeans, method = "wss") +
+  labs(title = "Elbow Method: Optimale Clusteranzahl (KMeans) LkwÄ", x = "Anzahl Cluster (k)", y = "WSS")
+```
+
+```{r}
+# K-Means Cluster
+kfz_cluster <- kmeans(kfz_scaled, centers = 3, nstart = 25)
+lkw_cluster <- kmeans(lkw_scaled, centers = 3, nstart = 25)
+
+# Cluster-Zuordnung hinzufügen
+gesamt_kfz_geo_clean <- gesamt_kfz_geo[complete.cases(kfz_data), ]
+gesamt_kfz_geo_clean$Cluster <- factor(kfz_cluster$cluster)
+
+gesamt_lkw_geo_clean <- gesamt_lkw_geo[complete.cases(lkw_data), ]
+gesamt_lkw_geo_clean$Cluster <- factor(lkw_cluster$cluster)
+```
+
+```{r}
+print(gesamt_kfz_geo_clean)
+```
+
+
+```{r}
+farben <- c("1" = "red", "2" = "green", "3" = "blue")
+pal <- colorFactor(palette = farben, domain = gesamt_kfz_geo_clean$cluster)
+
+leaflet(gesamt_kfz_geo_clean) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~LONGITUDE,
+    lat = ~LATITUDE,
+    color = ~pal(Cluster),
+    label = ~paste("Cluster:", Cluster),
+    radius = 3,
+    fillOpacity = 0.7
+  )
+```
+
+```{r}
+farben <- c("1" = "red", "2" = "green", "3" = "blue")
+pal <- colorFactor(palette = farben, domain = gesamt_lkw_geo_clean$cluster)
+
+leaflet(gesamt_lkw_geo_clean) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~LONGITUDE,
+    lat = ~LATITUDE,
+    color = ~pal(Cluster),
+    label = ~paste("Cluster:", Cluster),
+    radius = 3,
+    fillOpacity = 0.7
+  )
+```
+
+
+```{r}
+# Plot Cluster Kfz
+ggplot(gesamt_kfz_geo_clean, aes(x = LONGITUDE, y = LATITUDE, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Clusteranalyse Kfz – Zählstellen Wien") +
+  theme_minimal()
+
+# Plot Cluster Lkw
+ggplot(gesamt_lkw_geo_clean, aes(x = LONGITUDE, y = LATITUDE, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Clusteranalyse LkwÄ – Zählstellen Wien") +
+  theme_minimal()
+```
+```{r}
+# Clusteranalyse (Features) der Tage Montag bis Freitag
+cluster_features_mo_fr <- c("DTVMO", "DTVDD", "DTVFR")
+
+# Daten bereinigen
+kfz_data_mo_fr <- gesamt_kfz_geo %>%
+  select(all_of(cluster_features_mo_fr)) %>%
+  mutate_all(as.numeric) %>%
+  drop_na()
+
+lkw_data_mo_fr <- gesamt_lkw_geo %>%
+  select(all_of(cluster_features_mo_fr)) %>%
+  mutate_all(as.numeric) %>%
+  drop_na()
+
+kfz_scaled_mo_fr <- scale(kfz_data_mo_fr)
+lkw_scaled_mo_fr <- scale(lkw_data_mo_fr)
+
+# Elbow-Methode kfz
+fviz_nbclust(kfz_scaled_mo_fr, kmeans, method = "wss") +
+  labs(title = "Elbow Method: Optimale Clusteranzahl (KMeans) Kfz", x = "Anzahl Cluster (k)", y = "WSS")
+
+# Elbow-Methode lkw
+fviz_nbclust(lkw_scaled_mo_fr, kmeans, method = "wss") +
+  labs(title = "Elbow Method: Optimale Clusteranzahl (KMeans) LkwÄ", x = "Anzahl Cluster (k)", y = "WSS")
+```
+
+```{r}
+# K-Means Cluster
+kfz_cluster_mo_fr <- kmeans(kfz_scaled_mo_fr, centers = 3, nstart = 25)
+lkw_cluster_mo_fr <- kmeans(lkw_scaled_mo_fr, centers = 4, nstart = 25)
+
+# Cluster-Zuordnung hinzufügen
+gesamt_kfz_geo_clean_mo_fr <- gesamt_kfz_geo[complete.cases(kfz_data_mo_fr), ]
+gesamt_kfz_geo_clean_mo_fr$Cluster <- factor(kfz_cluster_mo_fr$cluster)
+
+gesamt_lkw_geo_clean_mo_fr <- gesamt_lkw_geo[complete.cases(lkw_data_mo_fr), ]
+gesamt_lkw_geo_clean_mo_fr$Cluster <- factor(lkw_cluster_mo_fr$cluster)
+```
+
+```{r}
+farben <- c("1" = "red", "2" = "green", "3" = "blue")
+pal <- colorFactor(palette = farben, domain = gesamt_kfz_geo_clean_mo_fr$cluster)
+
+leaflet(gesamt_kfz_geo_clean_mo_fr) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~LONGITUDE,
+    lat = ~LATITUDE,
+    color = ~pal(Cluster),
+    label = ~paste("Cluster:", Cluster),
+    radius = 3,
+    fillOpacity = 0.7
+  )
+```
+
+```{r}
+farben <- c("1" = "red", "2" = "green", "3" = "blue", "4" = "purple")
+pal <- colorFactor(palette = farben, domain = gesamt_lkw_geo_clean_mo_fr$cluster)
+
+leaflet(gesamt_lkw_geo_clean_mo_fr) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~LONGITUDE,
+    lat = ~LATITUDE,
+    color = ~pal(Cluster),
+    label = ~paste("Cluster:", Cluster),
+    radius = 3,
+    fillOpacity = 0.7
+  )
+```
+
+```{r}
+# Plot Cluster Kfz
+ggplot(gesamt_kfz_geo_clean_mo_fr, aes(x = LONGITUDE, y = LATITUDE, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Clusteranalyse Kfz – Zählstellen Wien") +
+  theme_minimal()
+
+# Plot Cluster Lkw
+ggplot(gesamt_lkw_geo_clean_mo_fr, aes(x = LONGITUDE, y = LATITUDE, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Clusteranalyse LkwÄ – Zählstellen Wien") +
+  theme_minimal()
+```
+
+```{r}
+# Clusteranalyse (Features) nur Wochenende und Feiertage
+cluster_features_we <- c("DTVSA", "DTVSF")
+
+# Daten bereinigen
+kfz_data_we <- gesamt_kfz_geo %>%
+  select(all_of(cluster_features_we)) %>%
+  mutate_all(as.numeric) %>%
+  drop_na()
+
+lkw_data_we <- gesamt_lkw_geo %>%
+  select(all_of(cluster_features_we)) %>%
+  mutate_all(as.numeric) %>%
+  drop_na()
+
+kfz_scaled_we <- scale(kfz_data_we)
+lkw_scaled_we <- scale(lkw_data_we)
+
+# Elbow-Methode kfz
+fviz_nbclust(kfz_scaled_we, kmeans, method = "wss") +
+  labs(title = "Elbow Method: Optimale Clusteranzahl (KMeans) Kfz", x = "Anzahl Cluster (k)", y = "WSS")
+
+# Elbow-Methode lkw
+fviz_nbclust(lkw_scaled_we, kmeans, method = "wss") +
+  labs(title = "Elbow Method: Optimale Clusteranzahl (KMeans) LkwÄ", x = "Anzahl Cluster (k)", y = "WSS")
+```
+
+```{r}
+# K-Means Cluster
+kfz_cluster_we <- kmeans(kfz_scaled_we, centers = 5, nstart = 25)
+lkw_cluster_we <- kmeans(lkw_scaled_we, centers = 3, nstart = 25)
+
+# Cluster-Zuordnung hinzufügen
+gesamt_kfz_geo_clean_we <- gesamt_kfz_geo[complete.cases(kfz_data_we), ]
+gesamt_kfz_geo_clean_we$Cluster <- factor(kfz_cluster_we$cluster)
+
+gesamt_lkw_geo_clean_we <- gesamt_lkw_geo[complete.cases(lkw_data_we), ]
+gesamt_lkw_geo_clean_we$Cluster <- factor(lkw_cluster_we$cluster)
+```
+
+```{r}
+farben <- c("1" = "red", "2" = "green", "3" = "turquoise","4" = "blue", "5" = "purple")
+pal <- colorFactor(palette = farben, domain = gesamt_kfz_geo_clean_we$cluster)
+
+leaflet(gesamt_kfz_geo_clean_we) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~LONGITUDE,
+    lat = ~LATITUDE,
+    color = ~pal(Cluster),
+    label = ~paste("Cluster:", Cluster),
+    radius = 3,
+    fillOpacity = 0.7
+  )
+```
+
+
+```{r}
+farben <- c("1" = "red", "2" = "green", "3" = "blue")
+pal <- colorFactor(palette = farben, domain = gesamt_lkw_geo_clean_we$cluster)
+
+leaflet(gesamt_lkw_geo_clean_we) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~LONGITUDE,
+    lat = ~LATITUDE,
+    color = ~pal(Cluster),
+    label = ~paste("Cluster:", Cluster),
+    radius = 3,
+    fillOpacity = 0.7
+  )
+```
+
+
+
+```{r}
+# Plot Cluster Kfz
+ggplot(gesamt_kfz_geo_clean_we, aes(x = LONGITUDE, y = LATITUDE, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Clusteranalyse Kfz – Zählstellen Wien") +
+  theme_minimal()
+
+# Plot Cluster Lkw
+ggplot(gesamt_lkw_geo_clean_we, aes(x = LONGITUDE, y = LATITUDE, color = Cluster)) +
+  geom_point(size = 2, alpha = 0.7) +
+  labs(title = "Clusteranalyse LkwÄ – Zählstellen Wien") +
+  theme_minimal()
+```
+
+
+
+

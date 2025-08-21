@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_adfdd48627cff58c0f462938b6dd7495 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdn.jsdelivr.net/gh/python-visualization/folium@main/folium/templates/leaflet_heat.min.js"></script>
+</head>
+<body>
+    
+    
+<div style="
+    position: fixed;
+    bottom: 50px;
+    left: 50px;
+    width: 180px;
+    height: 130px;
+    background-color: white;
+    border:2px solid grey;
+    z-index:9999;
+    font-size:14px;
+    padding: 10px;
+    ">
+    <b>Prognostizierte Kfz-Intensität</b><br>
+    <i>Dezember 2025</i><br>
+    <div style="background:linear-gradient(to right, blue, lime, red); height: 10px;"></div>
+    <span style="float:left">niedrig</span>
+    <span style="float:right">hoch</span>
+</div>
+    
+            <div class="folium-map" id="map_adfdd48627cff58c0f462938b6dd7495" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_adfdd48627cff58c0f462938b6dd7495 = L.map(
+                "map_adfdd48627cff58c0f462938b6dd7495",
+                {
+                    center: [48.2082, 16.3738],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_7b88343aa1c12b0833347bbb6827ac25 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_7b88343aa1c12b0833347bbb6827ac25.addTo(map_adfdd48627cff58c0f462938b6dd7495);
+        
+    
+            var heat_map_498f80e721e201f4527b8a1817538523 = L.heatLayer(
+                [[48.199942694318565, 16.372721286510952, 37533.54182979562], [48.21269404274544, 16.376996234456165, 64482.65785890813], [48.2122565949086, 16.423220043354263, 23538.80300579272], [48.20306149760585, 16.381600677900366, 21365.852364899125], [48.19471389575945, 16.369857947210054, 17586.223389312967], [48.18092392055039, 16.359123135341825, 53664.23264559185], [48.19268236819276, 16.33839757613888, 66313.43977794886], [48.206856370975935, 16.355726288275545, 17700.515110028056], [48.22066837296194, 16.343505558817167, 79881.92793609941], [48.12753436117125, 16.388947783315967, 11382.698564012704], [48.128323459209824, 16.389209067360028, 8768.77437704981], [48.16373874764555, 16.37526435884883, 27764.848814779973], [48.13683331343697, 16.38338813782649, 10069.941624179815], [48.15894902602852, 16.387066991189783, 18313.377822136357], [48.14845459169715, 16.46139223720254, 19405.262316085424], [48.15593784443527, 16.43958060386777, 14662.659572784718], [48.16382948456432, 16.31712333188604, 42849.63580469244], [48.17128854113906, 16.334816969417187, 23366.988276662283], [48.17488678797126, 16.342529916276902, 19174.25374202909], [48.20081133676978, 16.241016791248555, 44244.17594321138], [48.16968125021653, 16.295989822389846, 19128.499342614963], [48.17982058537905, 16.283926423244417, 12285.305656118087], [48.17935002741429, 16.298850176988683, 12672.969091714443], [48.20771115518934, 16.22764982163498, 12323.211829811597], [48.19896965499697, 16.307006185146843, 11329.613924158832], [48.197304403121066, 16.33477987864625, 18725.60786210912], [48.21937042464959, 16.32654588508573, 17468.646199247793], [48.22697214800761, 16.325895532870046, 18143.78807297394], [48.26975893588635, 16.361492841640764, 33110.903290201335], [48.24459767716876, 16.35568311670861, 20627.37909681487], [48.2463607720145, 16.3825234546772, 25394.577228353144], [48.2367589489597, 16.39193086630568, 24879.17643712467], [48.23839119336738, 16.367124157258235, 18770.065046588403], [48.27081520820866, 16.411684748849964, 21332.051179020196], [48.255010058179145, 16.425064714494475, 12647.423424243656], [48.292890441712906, 16.379327690110117, 10435.27317099922], [48.30133198308174, 16.422874777142887, 16833.621928698147], [48.25813312327941, 16.403051767432807, 12706.896408269104], [48.266568952151246, 16.42902276359209, 16649.205152367806], [48.27464013400161, 16.457655754654876, 12077.642828005404], [48.23014531667128, 16.413122550105502, 31970.356991509638], [48.2789248140785, 16.49171169433881, 7427.162064730548], [48.231320595199406, 16.449436021617018, 21290.123439441537], [48.208362081954434, 16.540165367274813, 17070.595075418703], [48.22141578074583, 16.443832333595523, 19383.666758745687], [48.2256274950422, 16.46472828907858, 25589.019760189844], [48.25362122165991, 16.446343758431553, 16982.98049324121], [48.24219642643532, 16.457841338399877, 16334.026116199382], [48.25086790465338, 16.51259364345841, 15648.317489824423], [48.129474607857794, 16.297924470918023, 31481.629506371868], [48.13203329574763, 16.258615930476058, 10674.77391291818], [48.13794039257982, 16.238954847590136, 12949.449883762749], [48.13820362652035, 16.3266675707357, 20060.396558262488], [48.13812803600689, 16.324611621648756, 19314.613671716463], [48.13636698577153, 16.338377983455782, 15170.045627824478], [48.1357167907128, 16.341169494083914, 8581.905241728638], [48.13490603122648, 16.33910131634987, 13796.106251902243], [48.1317633465537, 16.355373063732372, 16696.010017853023], [48.13216142327478, 16.28103770137187, 6138.222484384822], [48.13697509846856, 16.286390254659715, 15607.031100957694], [48.15045720869226, 16.27111555715092, 4955.385866123876]],
+                {
+  "minOpacity": 0.5,
+  "maxZoom": 13,
+  "radius": 18,
+  "blur": 15,
+}
+            );
+        
+    
+            heat_map_498f80e721e201f4527b8a1817538523.addTo(map_adfdd48627cff58c0f462938b6dd7495);
+        
+</script>
+</html>
